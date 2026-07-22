@@ -26,13 +26,26 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Generate launcher icons from logo
+        run: |
+          sudo apt-get install -y imagemagick 2>/dev/null || true
+          # Sizes for each mipmap density
+          declare -A sizes=( ["mipmap-mdpi"]=48 ["mipmap-hdpi"]=72 ["mipmap-xhdpi"]=96 ["mipmap-xxhdpi"]=144 ["mipmap-xxxhdpi"]=192 )
+          for dir in "${!sizes[@]}"; do
+            size=${sizes[$dir]}
+            target="android/app/src/main/res/$dir/ic_launcher.png"
+            convert assets/icons/logo.png -resize ${size}x${size} "$target" 2>/dev/null || \
+            cp assets/icons/logo.png "$target"
+          done
+          echo "Icons generated"
+
       - name: Get dependencies
         run: flutter pub get
 
       - name: Build release APK
         run: flutter build apk --release --no-tree-shake-icons
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: elkhalfy-admin-apk
