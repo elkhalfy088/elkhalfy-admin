@@ -14,8 +14,9 @@ class _NewsApiScreenState extends State<NewsApiScreen> {
   final _db = Get.find<DatabaseService>();
   final _fields = <String, TextEditingController>{};
   bool _saving = false;
+  String _method = 'GET';
 
-  final _config = [
+  final _config = <Map<String, dynamic>>[
     {'key': 'baseUrl', 'label': 'رابط API الأساسي', 'hint': 'https://newsapi.org/v2/', 'ltr': true},
     {'key': 'apiKey', 'label': 'مفتاح API', 'hint': 'your-api-key', 'ltr': true},
     {'key': 'titleField', 'label': 'حقل العنوان', 'hint': 'title', 'ltr': true},
@@ -32,7 +33,7 @@ class _NewsApiScreenState extends State<NewsApiScreen> {
   void initState() {
     super.initState();
     for (final c in _config) {
-      _fields[c['key']!] = TextEditingController();
+      _fields[c['key'] as String] = TextEditingController();
     }
   }
 
@@ -57,7 +58,7 @@ class _NewsApiScreenState extends State<NewsApiScreen> {
             final data = Map<String, dynamic>.from(
                 snapshot.data!.snapshot.value as Map);
             for (final c in _config) {
-              final key = c['key']!;
+              final key = c['key'] as String;
               if (_fields[key]!.text.isEmpty && data[key] != null) {
                 _fields[key]!.text = data[key].toString();
               }
@@ -103,28 +104,26 @@ class _NewsApiScreenState extends State<NewsApiScreen> {
     );
   }
 
-  Widget _buildField(Map<String, String> c) {
+  Widget _buildField(Map<String, dynamic> c) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: TextField(
-        controller: _fields[c['key']!],
+        controller: _fields[c['key'] as String],
         style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
         textDirection: c['ltr'] == true ? TextDirection.ltr : null,
         decoration: InputDecoration(
-          labelText: c['label'],
-          hintText: c['hint'],
+          labelText: c['label'] as String,
+          hintText: c['hint'] as String,
           hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
         ),
       ),
     );
   }
 
-  String _method = 'GET';
-
   Widget _buildMethodSelector(AsyncSnapshot snapshot) {
     if (snapshot.hasData && snapshot.data?.snapshot.value != null) {
       final data = Map<String, dynamic>.from(snapshot.data!.snapshot.value as Map);
-      if (data['method'] != null) _method = data['method'];
+      if (data['method'] != null) _method = data['method'] as String;
     }
     return Row(
       children: [
@@ -167,8 +166,10 @@ class _NewsApiScreenState extends State<NewsApiScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      final data = {for (final c in _config) c['key']!: _fields[c['key']!]!.text.trim()};
-      data['method'] = _method;
+      final data = <String, dynamic>{
+        for (final c in _config) (c['key'] as String): _fields[c['key'] as String]!.text.trim(),
+        'method': _method,
+      };
       await _db.updateNewsApiSettings(data);
       Get.snackbar('تم الحفظ', 'تم حفظ إعدادات الأخبار',
           backgroundColor: AppColors.success, colorText: Colors.white);
